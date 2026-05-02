@@ -24,6 +24,20 @@ repos:
     hooks:
       - id: markdownlint-cli2
 
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.4.2
+    hooks:
+      - id: prettier
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.17.0
+    hooks:
+      - id: eslint
+        files: \.[jt]sx?$
+        types: [file]
+        additional_dependencies:
+          - eslint@9.17.0
+
   - repo: https://github.com/tofuutils/pre-commit-opentofu
     rev: v2.3.0
     hooks:
