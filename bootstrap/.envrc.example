@@ -1,0 +1,20 @@
+# Bootstrap layer environment (tofu state bucket + KMS).
+# Copy this file to `.envrc` (then run `direnv allow`).
+
+# Pull in shared vars from ../.envrc (TF_VAR_project_id, TF_VAR_region, etc.).
+# direnv-only directive — won't work outside direnv.
+source_up
+
+# Plain names that bootstrap.sh expects. Derived from the parent's TF_VAR_*
+# so the project id / region only get edited in one place (../.envrc).
+export PROJECT_ID="$TF_VAR_project_id"
+export REGION="$TF_VAR_region"
+
+# Service account names created by bootstrap.sh.
+# Change only if you need to coexist with another deployment in the same project.
+export BOOTSTRAP_SA_NAME=tofu-bootstrap
+export APP_INFRA_SA_NAME=tofu-app-infra
+
+# Impersonate the bootstrap SA when running tofu/gcloud in this directory.
+# Derived from the names above — no need to edit.
+export GOOGLE_IMPERSONATE_SERVICE_ACCOUNT="${BOOTSTRAP_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
