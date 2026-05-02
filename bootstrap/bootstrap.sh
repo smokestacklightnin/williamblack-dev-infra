@@ -14,14 +14,23 @@ BOOTSTRAP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # === Preflight ===
 for tool in gcloud tofu; do
-  command -v "$tool" >/dev/null || { echo "ERROR: $tool not found in PATH" >&2; exit 1; }
+  command -v "$tool" >/dev/null || {
+    echo "ERROR: $tool not found in PATH" >&2
+    exit 1
+  }
 done
 
 USER_EMAIL="$(gcloud config get-value account 2>/dev/null || true)"
-[ -n "$USER_EMAIL" ] || { echo "ERROR: not authenticated. Run 'gcloud auth login'." >&2; exit 1; }
+[ -n "$USER_EMAIL" ] || {
+  echo "ERROR: not authenticated. Run 'gcloud auth login'." >&2
+  exit 1
+}
 
 gcloud auth application-default print-access-token >/dev/null 2>&1 \
-  || { echo "ERROR: no application-default credentials. Run 'gcloud auth application-default login'." >&2; exit 1; }
+  || {
+    echo "ERROR: no application-default credentials. Run 'gcloud auth application-default login'." >&2
+    exit 1
+  }
 
 echo "==> Project: $PROJECT_ID"
 echo "==> Region:  $REGION"
@@ -91,11 +100,14 @@ export GOOGLE_IMPERSONATE_SERVICE_ACCOUNT="$BOOTSTRAP_SA"
 echo "==> Waiting for impersonation grant to propagate..."
 for i in {1..12}; do
   if gcloud auth print-access-token \
-       --impersonate-service-account="$BOOTSTRAP_SA" >/dev/null 2>&1; then
+    --impersonate-service-account="$BOOTSTRAP_SA" >/dev/null 2>&1; then
     echo "    ready after ${i} attempt(s)"
     break
   fi
-  [ "$i" -eq 12 ] && { echo "ERROR: impersonation never became ready" >&2; exit 1; }
+  [ "$i" -eq 12 ] && {
+    echo "ERROR: impersonation never became ready" >&2
+    exit 1
+  }
   sleep 5
 done
 
