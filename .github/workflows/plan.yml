@@ -1,4 +1,4 @@
-name: plan-app
+name: plan
 
 # Runs `tofu plan` on PRs touching the app layer and posts the output as a
 # sticky comment on the PR. Read-only — never applies. Note: PRs from forks
