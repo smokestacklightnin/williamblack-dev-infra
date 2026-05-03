@@ -1,9 +1,11 @@
 variable "project_id" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 variable "region" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 variable "github_owner" {
@@ -27,7 +29,8 @@ variable "domain" {
 }
 
 variable "cloudflare_account_id" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 variable "cloudflare_api_token" {

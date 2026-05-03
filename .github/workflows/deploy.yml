@@ -1,4 +1,4 @@
-name: deploy-app
+name: deploy
 
 # Runs when a PR is merged to main (the merge produces a push to main).
 # Direct pushes to main also trigger a deploy; protect main with branch
