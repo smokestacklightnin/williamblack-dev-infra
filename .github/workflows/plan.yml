@@ -1,0 +1,115 @@
+name: plan-app
+
+# Runs `tofu plan` on PRs touching the app layer and posts the output as a
+# sticky comment on the PR. Read-only — never applies. Note: PRs from forks
+# do not receive repository secrets, so this workflow only produces a useful
+# plan for PRs from branches in this repo.
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - ".github/workflows/plan.yml"
+
+concurrency:
+  group: plan-app-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write # required for Workload Identity Federation
+  pull-requests: write # required to post the plan comment
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "0"
+      TF_CLI_ARGS_init: "-backend-config=bucket=${{ secrets.STATE_BUCKET_NAME }}"
+      TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
+      TF_VAR_region: ${{ secrets.GCP_REGION }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: tofu-app-infra@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      - uses: opentofu/setup-opentofu@fc711fa910b93cba0f3fbecaafc9f42fd0c411cb # v2.0.0
+        with:
+          tofu_wrapper: false
+
+      - name: tofu init
+        id: init
+        run: tofu init
+
+      - name: tofu plan
+        id: plan
+        run: |
+          set +e
+          tofu plan -no-color -input=false -out=tfplan 2>&1 | tee plan.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Post plan to PR
+        uses: actions/github-script@v7
+        env:
+          INIT_OUTCOME: ${{ steps.init.outcome }}
+          PLAN_EXIT: ${{ steps.plan.outputs.exitcode }}
+        with:
+          script: |
+            const fs = require('fs');
+            const MARKER = '<!-- tofu-plan-app -->';
+            const MAX = 60000; // GitHub comment limit is 65536; leave room for wrapper.
+
+            let plan = '';
+            try { plan = fs.readFileSync('app/plan.txt', 'utf8'); } catch { plan = '(no plan output)'; }
+            // Strip ANSI just in case.
+            plan = plan.replace(/\x1b\[[0-9;]*m/g, '');
+            const truncated = plan.length > MAX;
+            if (truncated) plan = plan.slice(-MAX);
+
+            const icon = (o) => o === 'success' ? '✅' : o === 'failure' ? '❌' : '⚠️';
+            const planIcon = process.env.PLAN_EXIT === '0' ? '✅' : '❌';
+
+            const body = [
+              MARKER,
+              `### Tofu plan — \`app/\``,
+              '',
+              `| Step | Result |`,
+              `| --- | --- |`,
+              `| init | ${icon(process.env.INIT_OUTCOME)} \`${process.env.INIT_OUTCOME}\` |`,
+              `| plan | ${planIcon} exit \`${process.env.PLAN_EXIT}\` |`,
+              '',
+              truncated ? `_Plan output truncated to last ${MAX} chars; see [full log](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})._\n` : '',
+              '<details><summary>Show plan</summary>',
+              '',
+              '```diff',
+              plan,
+              '```',
+              '',
+              '</details>',
+              '',
+              `_Pushed by @${context.actor} • commit \`${context.sha.slice(0,7)}\`_`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
+
+      - name: Fail job if plan failed
+        if: steps.plan.outputs.exitcode != '0'
+        run: exit 1
