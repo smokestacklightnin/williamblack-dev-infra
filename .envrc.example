@@ -12,3 +12,11 @@ export TF_VAR_project_id=your-gcp-project-id
 
 # GCP region for all regional resources (state bucket, KMS, website bucket).
 export TF_VAR_region=us-central1
+
+# GCS bucket holding remote tofu state. Kept out of backend.tf so the bucket
+# name doesn't end up in version control. Each layer's backend.tf is a partial
+# config and picks up the bucket via TF_CLI_ARGS_init below at `tofu init` time.
+# The bucket name is created by `infra/bootstrap/`; copy it here from the
+# bootstrap output (or from `gcloud storage buckets list`).
+export STATE_BUCKET_NAME=your-state-bucket-name
+export TF_CLI_ARGS_init="-backend-config=bucket=$STATE_BUCKET_NAME"

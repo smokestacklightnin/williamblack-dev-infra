@@ -1,0 +1,16 @@
+# App-infra layer environment.
+# Copy this file to `.envrc` (then run `direnv allow`).
+
+# Pull in shared vars from ../.envrc (TF_VAR_project_id, TF_VAR_region, etc.).
+# direnv-only directive — won't work outside direnv.
+source_up
+
+# Impersonate the app-infra SA when running tofu/gcloud in this directory.
+# Format: tofu-app-infra@<project-id>.iam.gserviceaccount.com
+export GOOGLE_IMPERSONATE_SERVICE_ACCOUNT="tofu-app-infra@${TF_VAR_project_id}.iam.gserviceaccount.com"
+
+# Cloudflare credentials live in a gitignored sibling file (.envrc.secrets).
+# That file should set:
+#   export TF_VAR_cloudflare_account_id=...    # from dash.cloudflare.com (right sidebar)
+#   export TF_VAR_cloudflare_api_token=...     # API token with Zone:Edit + Workers:Edit + DNS:Edit
+source_env_if_exists .envrc.secrets
