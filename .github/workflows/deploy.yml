@@ -1,0 +1,57 @@
+name: deploy-app
+
+# Runs when a PR is merged to main (the merge produces a push to main).
+# Direct pushes to main also trigger a deploy; protect main with branch
+# protection if you want to require the PR path.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+# Serialize deploys so concurrent runs don't fight over remote state.
+concurrency:
+  group: deploy-app
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # required for Workload Identity Federation
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "0"
+      TF_CLI_ARGS_init: "-backend-config=bucket=${{ secrets.STATE_BUCKET_NAME }}"
+      TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
+      TF_VAR_region: ${{ secrets.GCP_REGION }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: tofu-app-infra@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      - uses: opentofu/setup-opentofu@fc711fa910b93cba0f3fbecaafc9f42fd0c411cb # v2.0.0
+        with:
+          tofu_wrapper: false
+
+      - name: tofu init
+        run: tofu init
+
+      - name: tofu plan
+        run: tofu plan -out=tfplan
+
+      - name: tofu apply
+        run: tofu apply -auto-approve tfplan

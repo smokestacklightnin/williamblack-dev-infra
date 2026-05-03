@@ -3,12 +3,10 @@
 # These vars are inherited by every subdirectory via `source_up` in their `.envrc`.
 
 # The GCP project that owns all infrastructure for this site.
-# Used as the default project for `gcloud` calls.
-export CLOUDSDK_CORE_PROJECT=your-gcp-project-id
-
-# Auto-fills tofu input variables so you don't pass -var on every command.
-# Must equal CLOUDSDK_CORE_PROJECT — they refer to the same project.
+# Auto-fills tofu input variables so you don't pass -var on every command,
+# and is re-exported as CLOUDSDK_CORE_PROJECT to set the default `gcloud` project.
 export TF_VAR_project_id=your-gcp-project-id
+export CLOUDSDK_CORE_PROJECT="$TF_VAR_project_id"
 
 # GCP region for all regional resources (state bucket, KMS, website bucket).
 export TF_VAR_region=us-central1
