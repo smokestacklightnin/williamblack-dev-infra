@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: tofu-app-infra@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
@@ -58,7 +58,7 @@ jobs:
           echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Post plan to PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         env:
           INIT_OUTCOME: ${{ steps.init.outcome }}
           PLAN_EXIT: ${{ steps.plan.outputs.exitcode }}
