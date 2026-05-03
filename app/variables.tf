@@ -13,7 +13,7 @@ variable "github_owner" {
 
 variable "site_repo" {
   type    = string
-  default = "williamblack-dev"
+  default = "williamblack-dev-site"
 }
 
 variable "infra_repo" {
