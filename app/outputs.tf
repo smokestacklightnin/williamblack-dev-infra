@@ -1,4 +1,4 @@
-output "website_r2_bucket" {
+output "website_bucket" {
   value     = cloudflare_r2_bucket.website.name
   sensitive = true
 }
