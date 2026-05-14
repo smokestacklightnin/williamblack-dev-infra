@@ -30,13 +30,6 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   }
 }
 
-# Site repo (any branch, any event) can impersonate gha-deploy.
-resource "google_service_account_iam_member" "gha_deploy_wif" {
-  service_account_id = google_service_account.gha_deploy.name
-  role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_owner}/${var.site_repo}"
-}
-
 # Infra repo (any branch, any event — permissive) can impersonate tofu-app-infra.
 resource "google_service_account_iam_member" "app_infra_wif" {
   service_account_id = data.google_service_account.tofu_app_infra.name
