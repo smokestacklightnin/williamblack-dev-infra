@@ -3,19 +3,9 @@ variable "project_id" {
   sensitive = true
 }
 
-variable "region" {
-  type      = string
-  sensitive = true
-}
-
 variable "github_owner" {
   type    = string
   default = "smokestacklightnin"
-}
-
-variable "site_repo" {
-  type    = string
-  default = "williamblack-dev-site"
 }
 
 variable "infra_repo" {

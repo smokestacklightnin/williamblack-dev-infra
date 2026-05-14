@@ -1,15 +1,5 @@
-output "website_bucket" {
-  value     = google_storage_bucket.website.name
-  sensitive = true
-}
-
 output "website_r2_bucket" {
   value     = cloudflare_r2_bucket.website.name
-  sensitive = true
-}
-
-output "gha_deploy_sa" {
-  value     = google_service_account.gha_deploy.email
   sensitive = true
 }
 

@@ -12,5 +12,5 @@ export GOOGLE_IMPERSONATE_SERVICE_ACCOUNT="tofu-app-infra@${TF_VAR_project_id}.i
 # Cloudflare credentials live in a gitignored sibling file (.envrc.secrets).
 # That file should set:
 #   export TF_VAR_cloudflare_account_id=...    # from dash.cloudflare.com (right sidebar)
-#   export TF_VAR_cloudflare_api_token=...     # API token with Zone:Edit + Workers:Edit + DNS:Edit
+#   export TF_VAR_cloudflare_api_token=...     # see .envrc.secrets.example for required permissions
 source_env_if_exists .envrc.secrets
